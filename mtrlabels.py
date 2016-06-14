@@ -19,52 +19,49 @@ class MTRLabels(inkex.Effect):
     def __init__(self):
         """
         Constructor.
-        Defines the "--what" option of a script.
         """
         # Call the base class constructor.
         inkex.Effect.__init__(self)
 
-        # Define command line options
-        self.OptionParser.add_option('-c', '--name_chinese', action = 'store', type = 'string', dest = 'chinese', default = '', help = 'What is the name in Chinese?')
-        self.OptionParser.add_option('-e', '--name_english', action = 'store', type = 'string', dest = 'english', default = '', help = 'What is the name in English?')
-
     def effect(self):
         """
         Effect behaviour.
-        Overrides base class' method and inserts "Hello World" text into SVG document.
+        Overrides base class' method.
         """
-        # Get script's option values.
-        chinese = self.options.chinese
-        english = self.options.english
 
-        # Get access to main SVG document element and get its dimensions.
-        svg = self.document.getroot()
-        # or alternatively
-        # svg = self.document.xpath('//svg:svg',namespaces=inkex.NSS)[0]
+        for id,node in self.selected.iteritems():
+            self.setStyle(node)
 
-        # Again, there are two ways to get the attibutes:
-        width  = self.unittouu(svg.get('width'))
-        height = self.unittouu(svg.attrib['height'])
+    def setStyle(self, node):
+        style = simplestyle.parseStyle(node.get('style'))
 
-        # Create a new layer.
-        layer = inkex.etree.SubElement(svg, 'g')
-        layer.set(inkex.addNS('label', 'inkscape'), 'Hello %s Layer' % (chinese))
-        layer.set(inkex.addNS('groupmode', 'inkscape'), 'layer')
+        style['text-align'] = 'center'
+        style['text-anchor'] = 'middle'
+        style['font-family'] = '\'Myriad Pro\''
+        style['font-size'] = '6.25px'
 
-        # Create text element
-        text = inkex.etree.Element(inkex.addNS('text','svg'))
-        text.text = '%s %s' % (chinese, english)
+        # Unset styles on original
+        style.pop('fill', None)
+        style.pop('stroke', None)
 
-        # Set text position to center of document.
-        text.set('x', str(width / 2))
-        text.set('y', str(height / 2))
+        node.set('style', simplestyle.formatStyle(style))
 
-        # Center text horizontally with CSS style.
-        style = {'text-align' : 'center', 'text-anchor': 'middle'}
-        text.set('style', simplestyle.formatStyle(style))
+        id = node.get('id')
+        parent = node.getparent()
 
-        # Connect elements together.
-        layer.append(text)
+        parent.remove(node)
+
+        group = inkex.etree.SubElement(parent, 'g')
+
+        group.append(node)
+
+        outline = inkex.etree.SubElement(group, 'use')
+        outline.set(inkex.addNS('href', 'xlink'), '#%s' % id)
+        outline.set('style', simplestyle.formatStyle({'stroke': '#ffffff'}))
+
+        text = inkex.etree.SubElement(group, 'use')
+        text.set(inkex.addNS('href', 'xlink'), '#%s' % id)
+        text.set('style', simplestyle.formatStyle({'fill': '#00234f'}))
 
 # Create effect instance and apply it.
 effect = MTRLabels()

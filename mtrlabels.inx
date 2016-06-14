@@ -3,8 +3,6 @@
   <_name>MTR Labels</_name>
   <id>com.ijmacd.inkscape.mtrlabels</id>
   <dependency type="executable" location="extensions">inkex.py</dependency>
-  <param name="name_chinese" type="string" _gui-text="Chinese Name: " />
-  <param name="name_english" type="string" _gui-text="English Name: " />
   <effect>
     <object-type>all</object-type>
     <effects-menu>
