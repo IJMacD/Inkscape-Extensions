@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 # These two lines are only needed if you don't put the script directly into
 # the installation directory
@@ -33,12 +32,17 @@ class MTRLabels(inkex.Effect):
             self.setStyle(node)
 
     def setStyle(self, node):
+        textcontent = inkex.etree.tostring(node, method="text", encoding="UTF-8").strip().decode("utf-8")
+
         style = simplestyle.parseStyle(node.get('style'))
+
+        is_chinese = ord(textcontent[0]) > 256
 
         style['text-align'] = 'center'
         style['text-anchor'] = 'middle'
-        style['font-family'] = '\'Myriad Pro\''
-        style['font-size'] = '6.25px'
+        style['font-family'] = '\'MTR Sung\'' if is_chinese else '\'Myriad Pro\''
+        style['font-size'] = '7.5px' if is_chinese else '6.25px'
+        style['font-weight'] = 'normal' if is_chinese else '600'
 
         # Unset styles on original
         style.pop('fill', None)
@@ -48,20 +52,41 @@ class MTRLabels(inkex.Effect):
 
         id = node.get('id')
         parent = node.getparent()
+        index = parent.index(node)
 
         parent.remove(node)
 
-        group = inkex.etree.SubElement(parent, 'g')
+        group = inkex.etree.Element('g')
 
-        group.append(node)
+        parent.insert(index, group)
+
+        text = inkex.etree.SubElement(group, 'text')
+        text.set('id', id)
+        text.set('style', simplestyle.formatStyle(style))
+        (x, y) = self.getXY(node)
+        text.set('x', str(x))
+        text.set('y', str(y))
+        text.text = textcontent
 
         outline = inkex.etree.SubElement(group, 'use')
         outline.set(inkex.addNS('href', 'xlink'), '#%s' % id)
         outline.set('style', simplestyle.formatStyle({'stroke': '#ffffff'}))
 
-        text = inkex.etree.SubElement(group, 'use')
-        text.set(inkex.addNS('href', 'xlink'), '#%s' % id)
-        text.set('style', simplestyle.formatStyle({'fill': '#00234f'}))
+        fill = inkex.etree.SubElement(group, 'use')
+        fill.set(inkex.addNS('href', 'xlink'), '#%s' % id)
+        fill.set('style', simplestyle.formatStyle({'fill': '#00234f'}))
+
+    def getXY(self, node):
+        x = node.get('x')
+        y = node.get('y')
+
+        if(x is None or x is 0):
+            for child in node:
+                (x, y) = self.getXY(child)
+                if(x is not None and x is not 0):
+                    break
+
+        return (x, y)
 
 # Create effect instance and apply it.
 effect = MTRLabels()
